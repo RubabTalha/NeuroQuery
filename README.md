@@ -106,7 +106,7 @@ No heavy frameworks. Pure engineering fundamentals.
 
 🚀 Installation & Usage
 Quick Start
-git clone https://github.com/RubabTalha/neuroquery.git
+git clone https://github.com/RubabTalha/NeuroQuery.git
 cd neuroquery
 open index.html
 That’s it. No setup, no environment variables, no dependencies.
