@@ -1,0 +1,16 @@
+{
+  "short_name": "NeuroQuery",
+  "name": "NeuroQuery - RAG Pipeline Demo",
+  "description": "Advanced Retrieval-Augmented Generation Pipeline Demonstration",
+  "icons": [
+    {
+      "src": "neuroquery-logo.png",
+      "sizes": "500x500",
+      "type": "image/png"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#ec4899",
+  "background_color": "#111827"
+}

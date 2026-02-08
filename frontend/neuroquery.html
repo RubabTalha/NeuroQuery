@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NeuroQuery | Advanced RAG Pipeline Demo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-pink: #e11d8f;
+            --primary-pink-light: #f472b6;
+            --primary-pink-dark: #be185d;
+            --dark-bg: #0f172a;
+            --dark-card: #1e1b2e;
+            --border-color: #2d2a42;
+            --text-light: #f1f5f9;
+            --text-gray: #94a3b8;
+            --text-light-gray: #cbd5e1;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --gradient-pink: linear-gradient(135deg, #e11d8f 0%, #be185d 100%);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f172a;
+            color: var(--text-light);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+            font-size: 15px;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: var(--text-light-gray);
+        }
+
+        .screen {
+            min-height: 100vh;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .screen.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .gradient-text {
+            background: var(--gradient-pink);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--gradient-pink);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(225, 29, 143, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-light);
+            border: 1px solid var(--primary-pink);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(225, 29, 143, 0.1);
+        }
+
+        /* Logo Styles */
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            object-fit: cover;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            border: none;
+        }
+
+        .logo-large {
+            width: 100px;
+            height: 100px;
+            border-radius: 16px;
+            object-fit: cover;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            margin-bottom: 1.5rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Splash Screen */
+        .splash-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b2e 100%);
+        }
+
+        .splash-content {
+            text-align: center;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .splash-title {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            letter-spacing: -0.5px;
+        }
+
+        .splash-subtitle {
+            font-size: 1.125rem;
+            color: var(--text-light-gray);
+            margin-bottom: 3rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+
+        .splash-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin: 3rem 0;
+        }
+
+        .feature-item {
+            background: rgba(30, 27, 46, 0.6);
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid rgba(225, 29, 143, 0.2);
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .feature-item:hover {
+            border-color: var(--primary-pink);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(225, 29, 143, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+            color: var(--primary-pink);
+        }
+
+        .feature-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-light);
+        }
+
+        .feature-desc {
+            color: var(--text-gray);
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-top: 3rem;
+        }
+
+        /* Login Screen */
+        .login-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b2e 100%);
+        }
+
+        .login-card {
+            background: rgba(30, 27, 46, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(225, 29, 143, 0.2);
+            border-radius: 16px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .login-title {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .login-subtitle {
+            color: var(--text-gray);
+            font-size: 0.875rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: var(--text-light-gray);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-light);
+            font-size: 14px;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-pink);
+            box-shadow: 0 0 0 3px rgba(225, 29, 143, 0.1);
+        }
+
+        /* Dashboard */
+        .navbar {
+            background: rgba(30, 27, 46, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(225, 29, 143, 0.1);
+            padding: 16px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .navbar-brand {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-light);
+            text-decoration: none;
+        }
+
+        .dashboard-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .dashboard-title {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .dashboard-subtitle {
+            color: var(--text-gray);
+            font-size: 1rem;
+            margin-bottom: 40px;
+            max-width: 600px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: rgba(30, 27, 46, 0.6);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid rgba(225, 29, 143, 0.1);
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .stat-card:hover {
+            border-color: var(--primary-pink);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: var(--gradient-pink);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: var(--text-gray);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        /* Upload Section */
+        .upload-section {
+            background: rgba(30, 27, 46, 0.6);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(225, 29, 143, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: var(--text-light);
+        }
+
+        .upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 48px 32px;
+            text-align: center;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            margin-bottom: 24px;
+            background: rgba(15, 23, 42, 0.3);
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-pink);
+            background: rgba(225, 29, 143, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--primary-pink);
+            background: rgba(225, 29, 143, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            color: var(--primary-pink);
+            margin-bottom: 16px;
+        }
+
+        .upload-text {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-light);
+        }
+
+        .upload-hint {
+            color: var(--text-gray);
+            font-size: 0.875rem;
+            margin-bottom: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(30, 27, 46, 0.5);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 16px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient-pink);
+            transition: width 0.3s ease;
+        }
+
+        /* Query Section */
+        .query-input-container {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .query-input {
+            width: 100%;
+            min-height: 120px;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-light);
+            font-size: 15px;
+            font-family: 'Inter', sans-serif;
+            resize: vertical;
+            transition: all 0.2s ease;
+            line-height: 1.6;
+        }
+
+        .query-input:focus {
+            outline: none;
+            border-color: var(--primary-pink);
+            box-shadow: 0 0 0 3px rgba(225, 29, 143, 0.1);
+        }
+
+        .query-input::placeholder {
+            color: var(--text-gray);
+        }
+
+        /* Results Section */
+        .results-card {
+            background: rgba(30, 27, 46, 0.8);
+            border-radius: 16px;
+            padding: 32px;
+            margin-top: 24px;
+            border: 1px solid rgba(225, 29, 143, 0.2);
+        }
+
+        .answer-content {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--primary-pink);
+            line-height: 1.7;
+            margin-bottom: 32px;
+            color: var(--text-light-gray);
+            font-size: 15px;
+            white-space: pre-line;
+        }
+
+        .source-item {
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(225, 29, 143, 0.1);
+            transition: all 0.2s ease;
+        }
+
+        .source-item:hover {
+            border-color: var(--primary-pink);
+        }
+
+        .source-index {
+            display: inline-block;
+            background: var(--gradient-pink);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-weight: 600;
+            margin-right: 12px;
+            font-size: 0.75rem;
+        }
+
+        .file-list {
+            margin-top: 24px;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(225, 29, 143, 0.1);
+            transition: all 0.2s ease;
+        }
+
+        .file-item:hover {
+            border-color: var(--primary-pink);
+        }
+
+        /* Pipeline */
+        .pipeline-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 32px 0;
+            position: relative;
+        }
+
+        .pipeline-step {
+            position: relative;
+            text-align: center;
+            flex: 1;
+        }
+
+        .step-circle {
+            width: 48px;
+            height: 48px;
+            background: rgba(30, 27, 46, 0.8);
+            border: 2px solid var(--primary-pink);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 1.25rem;
+            color: var(--primary-pink);
+            transition: all 0.2s ease;
+        }
+
+        .step-circle.active {
+            background: var(--gradient-pink);
+            color: white;
+            box-shadow: 0 0 20px rgba(225, 29, 143, 0.3);
+        }
+
+        .step-circle.processing {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .step-label {
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+
+        .step-description {
+            color: var(--text-gray);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Status Grid */
+        .status-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(225, 29, 143, 0.1);
+            font-size: 0.875rem;
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Guide */
+        .guide-steps {
+            display: grid;
+            gap: 16px;
+        }
+
+        .guide-step {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 0.875rem;
+        }
+
+        .step-number {
+            background: var(--gradient-pink);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        /* Loading */
+        .loading-spinner {
+            border: 3px solid rgba(30, 27, 46, 0.3);
+            border-top: 3px solid var(--primary-pink);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Stream Response */
+        .streaming-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary-pink);
+            margin: 0 2px;
+            opacity: 0.6;
+            animation: blink 1.4s infinite;
+        }
+
+        .streaming-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .streaming-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
+
+        /* Grid System */
+        .grid {
+            display: grid;
+        }
+
+        .grid-cols-1 {
+            grid-template-columns: 1fr;
+        }
+
+        .grid-cols-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .gap-8 {
+            gap: 32px;
+        }
+
+        /* Utility Classes */
+        .text-center {
+            text-align: center;
+        }
+
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        .mb-8 { margin-bottom: 2rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mt-6 { margin-top: 1.5rem; }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .grid-cols-3 {
+                grid-template-columns: 1fr;
+            }
+            
+            .pipeline-steps {
+                flex-direction: column;
+                gap: 24px;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .navbar-content {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+            
+            .splash-title {
+                font-size: 2.25rem;
+            }
+            
+            .dashboard-title {
+                font-size: 1.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splashScreen" class="screen active">
+        <div class="splash-screen">
+            <div class="container">
+                <div class="splash-content">
+                    <div class="logo-wrapper">
+                        <img src="src/assets/neuroquery-logo.jpg" alt="NeuroQuery Logo" class="logo-large">
+                    </div>
+                    <h1 class="splash-title gradient-text">NeuroQuery</h1>
+                    <p class="splash-subtitle">
+                        An advanced Retrieval-Augmented Generation pipeline for intelligent document querying. 
+                        Upload PDFs and extract insights with AI-powered semantic search.
+                    </p>
+                    
+                    <div class="splash-features">
+                        <div class="feature-item">
+                            <div class="feature-icon">🔍</div>
+                            <h3 class="feature-title">Real-time Processing</h3>
+                            <p class="feature-desc">Live document indexing and query processing with streaming responses.</p>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">📄</div>
+                            <h3 class="feature-title">PDF Processing</h3>
+                            <p class="feature-desc">Intelligent text extraction and chunking from PDF documents.</p>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">🤖</div>
+                            <h3 class="feature-title">AI-Powered Q&A</h3>
+                            <p class="feature-desc">Natural language question answering with source attribution.</p>
+                        </div>
+                        <div class="feature-item">
+                            <div class="feature-icon">⚡</div>
+                            <h3 class="feature-title">API Integration</h3>
+                            <p class="feature-desc">Connect to backend RAG pipeline for real-time document analysis.</p>
+                        </div>
+                    </div>
+
+                    <div class="cta-buttons">
+                        <button onclick="showScreen('login')" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> Get Started
+                        </button>
+                        <button onclick="showScreen('dashboard')" class="btn btn-secondary">
+                            <i class="fas fa-chart-line"></i> View Dashboard
+                        </button>
+                    </div>
+
+                    <div class="mt-6" style="color: var(--text-gray); font-size: 0.875rem;">
+                        Powered by React • FastAPI • LangChain • ChromaDB
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="screen">
+        <div class="login-screen">
+            <div class="container">
+                <div class="login-card">
+                    <div class="login-header">
+                        <div class="logo-wrapper mb-6">
+                            <img src="src/assets/neuroquery-logo.jpg" alt="NeuroQuery Logo" class="logo-large">
+                        </div>
+                        <h1 class="login-title gradient-text">Welcome to NeuroQuery</h1>
+                        <p class="login-subtitle">Sign in to access the RAG pipeline dashboard</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-input" placeholder="Enter your email address">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-input" placeholder="Enter your password">
+                    </div>
+
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.875rem;">
+                            <input type="checkbox">
+                            <span>Remember me</span>
+                        </label>
+                    </div>
+
+                    <button onclick="showScreen('dashboard')" class="btn btn-primary" style="width: 100%;">
+                        Sign In to Dashboard
+                    </button>
+
+                    <div class="text-center mt-6 pt-6" style="border-top: 1px solid var(--border-color);">
+                        <p style="color: var(--text-gray); font-size: 0.875rem;">
+                            Return to homepage 
+                            <a href="#" onclick="showScreen('splash')" style="color: var(--primary-pink); font-weight: 600; text-decoration: none;">
+                                here
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Screen -->
+    <div id="dashboardScreen" class="screen">
+        <!-- Navbar -->
+        <nav class="navbar">
+            <div class="navbar-content">
+                <a href="#" onclick="showScreen('splash')" class="logo-container">
+                    <img src="src/assets/neuroquery-logo.jpg" alt="NeuroQuery Logo" class="logo">
+                    <span class="navbar-brand gradient-text">NeuroQuery</span>
+                </a>
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <div style="text-align: right;">
+                        <div style="font-weight: 600; font-size: 0.875rem;">Demo Administrator</div>
+                        <div style="font-size: 0.75rem; color: var(--text-gray);">admin@neuroquery.ai</div>
+                    </div>
+                    <button onclick="showScreen('splash')" class="btn btn-secondary">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Dashboard Content -->
+        <div class="dashboard-content">
+            <div class="mb-8">
+                <h1 class="dashboard-title gradient-text">RAG Pipeline Dashboard</h1>
+                <p class="dashboard-subtitle">
+                    Upload documents and query them using our advanced Retrieval-Augmented Generation pipeline. 
+                    Real-time processing with streaming responses.
+                </p>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalDocuments">0</div>
+                    <div class="stat-label">Documents</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalChunks">0</div>
+                    <div class="stat-label">Text Chunks</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">384d</div>
+                    <div class="stat-label">Embedding Dimension</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="apiStatus">-</div>
+                    <div class="stat-label">API Status</div>
+                </div>
+            </div>
+
+            <!-- Main Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Left Column -->
+                <div class="lg:col-span-2">
+                    <!-- File Upload -->
+                    <div class="upload-section">
+                        <h2 class="section-title">Document Upload</h2>
+                        <div class="upload-area" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                            <div class="upload-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <div class="upload-text">Upload PDF Documents</div>
+                            <p class="upload-hint">Drag & drop files or click to browse. Maximum file size: 10MB</p>
+                            <button class="btn btn-secondary">
+                                <i class="fas fa-folder-open"></i> Select Files
+                            </button>
+                            <div class="progress-bar hidden" id="uploadProgress">
+                                <div class="progress-fill" id="uploadProgressFill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <input type="file" id="fileInput" accept=".pdf" multiple style="display: none;" onchange="handleFileUpload(event)">
+                        
+                        <!-- Uploaded Files -->
+                        <div class="file-list">
+                            <h3 class="section-title">Processed Documents</h3>
+                            <div id="uploadedFilesList">
+                                <!-- Files will be dynamically added here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Query Section -->
+                    <div class="upload-section">
+                        <h2 class="section-title">Document Query</h2>
+                        <div class="query-input-container">
+                            <textarea class="query-input" placeholder="Enter your question about the uploaded documents... Example: 'What are the key findings in the research paper?'" id="queryInput"></textarea>
+                        </div>
+                        <button class="btn btn-primary" style="width: 100%;" id="queryButton" onclick="processQuery()">
+                            <i class="fas fa-search"></i> Execute Query
+                        </button>
+                    </div>
+
+                    <!-- Results Section -->
+                    <div id="resultsSection" class="hidden">
+                        <div class="results-card">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+                                <div style="color: var(--primary-pink); font-size: 1.5rem;">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <h2 class="section-title gradient-text">Query Results</h2>
+                                <div id="streamingIndicator" class="hidden" style="margin-left: auto;">
+                                    <span class="streaming-dot"></span>
+                                    <span class="streaming-dot"></span>
+                                    <span class="streaming-dot"></span>
+                                </div>
+                            </div>
+                            <div class="answer-content" id="answerContent">
+                                <!-- Answer will appear here -->
+                            </div>
+                            
+                            <h3 class="section-title">Source References</h3>
+                            <div id="sourcesList">
+                                <!-- Sources will appear here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div>
+                    <!-- RAG Pipeline -->
+                    <div class="upload-section">
+                        <h2 class="section-title text-center">Pipeline Architecture</h2>
+                        <div class="pipeline-steps">
+                            <div class="pipeline-step">
+                                <div class="step-circle" id="stepUpload">
+                                    <i class="fas fa-upload"></i>
+                                </div>
+                                <div class="step-label">Ingestion</div>
+                                <div class="step-description">Document Upload</div>
+                            </div>
+                            <div class="pipeline-step">
+                                <div class="step-circle" id="stepProcess">
+                                    <i class="fas fa-cogs"></i>
+                                </div>
+                                <div class="step-label">Processing</div>
+                                <div class="step-description">Text Extraction</div>
+                            </div>
+                            <div class="pipeline-step">
+                                <div class="step-circle" id="stepEmbed">
+                                    <i class="fas fa-brain"></i>
+                                </div>
+                                <div class="step-label">Embedding</div>
+                                <div class="step-description">Vector Generation</div>
+                            </div>
+                            <div class="pipeline-step">
+                                <div class="step-circle" id="stepRetrieve">
+                                    <i class="fas fa-search"></i>
+                                </div>
+                                <div class="step-label">Retrieval</div>
+                                <div class="step-description">Query Processing</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Status -->
+                    <div class="upload-section">
+                        <h2 class="section-title">System Status</h2>
+                        <div class="status-grid">
+                            <div class="status-item">
+                                <span>API Server</span>
+                                <span id="apiServerStatus" style="color: var(--warning);">Checking...</span>
+                            </div>
+                            <div class="status-item">
+                                <span>Vector Database</span>
+                                <span id="vectorDbStatus" style="color: var(--warning);">Checking...</span>
+                            </div>
+                            <div class="status-item">
+                                <span>Embedding Service</span>
+                                <span id="embeddingStatus" style="color: var(--warning);">Checking...</span>
+                            </div>
+                            <div class="status-item">
+                                <span>Processing Queue</span>
+                                <span id="queueStatus">0 pending</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Guide -->
+                    <div class="upload-section">
+                        <h2 class="section-title">Usage Instructions</h2>
+                        <div class="guide-steps">
+                            <div class="guide-step">
+                                <div class="step-number">1</div>
+                                <span>Upload PDF documents using the upload section</span>
+                            </div>
+                            <div class="guide-step">
+                                <div class="step-number">2</div>
+                                <span>Documents will be automatically processed and indexed</span>
+                            </div>
+                            <div class="guide-step">
+                                <div class="step-number">3</div>
+                                <span>Enter questions about document content in the query field</span>
+                            </div>
+                            <div class="guide-step">
+                                <div class="step-number">4</div>
+                                <span>Review AI-generated responses with source references</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Backend API Configuration
+        const API_BASE_URL = 'http://localhost:8000'; // Change this to your FastAPI backend URL
+        let uploadQueue = [];
+        let isProcessing = false;
+
+        // Screen navigation
+        function showScreen(screenName) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenName + 'Screen').classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        // Check API Status on Dashboard Load
+        async function checkAPIStatus() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health`);
+                if (response.ok) {
+                    const data = await response.json();
+                    updateStatus('online');
+                    updateStats(data);
+                } else {
+                    updateStatus('offline');
+                }
+            } catch (error) {
+                updateStatus('offline');
+                console.error('API connection error:', error);
+            }
+        }
+
+        function updateStatus(status) {
+            const statusElement = document.getElementById('apiStatus');
+            const serverStatus = document.getElementById('apiServerStatus');
+            const vectorStatus = document.getElementById('vectorDbStatus');
+            const embeddingStatus = document.getElementById('embeddingStatus');
+            
+            if (status === 'online') {
+                statusElement.textContent = 'Online';
+                statusElement.style.color = 'var(--success)';
+                serverStatus.textContent = 'Online';
+                serverStatus.style.color = 'var(--success)';
+                vectorStatus.textContent = 'Connected';
+                vectorStatus.style.color = 'var(--success)';
+                embeddingStatus.textContent = 'Active';
+                embeddingStatus.style.color = 'var(--success)';
+            } else {
+                statusElement.textContent = 'Offline';
+                statusElement.style.color = 'var(--error)';
+                serverStatus.textContent = 'Offline';
+                serverStatus.style.color = 'var(--error)';
+                vectorStatus.textContent = 'Disconnected';
+                vectorStatus.style.color = 'var(--error)';
+                embeddingStatus.textContent = 'Inactive';
+                embeddingStatus.style.color = 'var(--error)';
+            }
+        }
+
+        function updateStats(data) {
+            if (data.documents) {
+                document.getElementById('totalDocuments').textContent = data.documents;
+            }
+            if (data.chunks) {
+                document.getElementById('totalChunks').textContent = data.chunks;
+            }
+            if (data.queue) {
+                document.getElementById('queueStatus').textContent = `${data.queue} pending`;
+            }
+        }
+
+        // File Upload with Real API
+        async function handleFileUpload(event) {
+            const files = event.target.files || event.dataTransfer?.files;
+            if (!files || files.length === 0) return;
+            
+            const dropZone = document.getElementById('dropZone');
+            dropZone.classList.remove('dragover');
+            
+            const progressBar = document.getElementById('uploadProgress');
+            const progressFill = document.getElementById('uploadProgressFill');
+            
+            progressBar.classList.remove('hidden');
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                
+                if (!file.name.toLowerCase().endsWith('.pdf')) {
+                    alert(`Error: ${file.name} is not a PDF file.`);
+                    continue;
+                }
+                
+                if (file.size > 10 * 1024 * 1024) {
+                    alert(`Error: ${file.name} exceeds 10MB limit.`);
+                    continue;
+                }
+                
+                // Add to upload queue
+                uploadQueue.push(file);
+            }
+            
+            // Process upload queue
+            if (!isProcessing) {
+                processUploadQueue();
+            }
+        }
+
+        async function processUploadQueue() {
+            if (uploadQueue.length === 0) {
+                isProcessing = false;
+                document.getElementById('uploadProgress').classList.add('hidden');
+                document.getElementById('uploadProgressFill').style.width = '0%';
+                return;
+            }
+            
+            isProcessing = true;
+            const file = uploadQueue.shift();
+            
+            // Show processing animation
+            document.getElementById('stepUpload').classList.add('processing');
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    addFileToList(file.name, result);
+                    
+                    // Update pipeline steps
+                    updatePipelineStep('upload', true);
+                    setTimeout(() => updatePipelineStep('process', true), 500);
+                    setTimeout(() => updatePipelineStep('embed', true), 1000);
+                    
+                    // Update stats
+                    await checkAPIStatus();
+                    
+                } else {
+                    throw new Error('Upload failed');
+                }
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                alert(`Failed to upload ${file.name}: ${error.message}`);
+            } finally {
+                document.getElementById('stepUpload').classList.remove('processing');
+                
+                // Continue with next file in queue
+                setTimeout(() => processUploadQueue(), 500);
+            }
+        }
+
+        function updatePipelineStep(step, active) {
+            const stepCircle = document.getElementById(`step${step.charAt(0).toUpperCase() + step.slice(1)}`);
+            if (active) {
+                stepCircle.classList.add('active');
+                stepCircle.classList.add('processing');
+                setTimeout(() => stepCircle.classList.remove('processing'), 1000);
+            } else {
+                stepCircle.classList.remove('active');
+            }
+        }
+
+        function addFileToList(filename, data) {
+            const fileList = document.getElementById('uploadedFilesList');
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            
+            const timestamp = new Date().toLocaleTimeString();
+            fileItem.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="color: var(--primary-pink); font-size: 1.25rem;">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.875rem;">${filename}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-gray);">${(data.size || 0).toFixed(1)} MB • Processed ${timestamp}</div>
+                    </div>
+                </div>
+                <div style="color: var(--success); font-size: 0.75rem; font-weight: 600;">
+                    <i class="fas fa-check-circle"></i> Indexed
+                </div>
+            `;
+            
+            fileList.insertBefore(fileItem, fileList.firstChild);
+        }
+
+        // Drag and Drop Support
+        function setupDragAndDrop() {
+            const dropZone = document.getElementById('dropZone');
+            
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+            
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('dragover');
+            });
+            
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+                handleFileUpload(e);
+            });
+        }
+
+        // Real-time Query Processing with Streaming
+        async function processQuery() {
+            const query = document.getElementById('queryInput').value.trim();
+            if (!query) {
+                alert('Please enter a query to proceed.');
+                return;
+            }
+            
+            // Disable button and show loading
+            const queryButton = document.getElementById('queryButton');
+            queryButton.disabled = true;
+            queryButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
+            // Reset pipeline steps
+            document.querySelectorAll('.step-circle').forEach(circle => {
+                circle.classList.remove('active');
+            });
+            
+            // Show results section
+            const resultsSection = document.getElementById('resultsSection');
+            resultsSection.classList.remove('hidden');
+            
+            const answerContent = document.getElementById('answerContent');
+            const sourcesList = document.getElementById('sourcesList');
+            const streamingIndicator = document.getElementById('streamingIndicator');
+            
+            // Clear previous results
+            answerContent.innerHTML = '';
+            sourcesList.innerHTML = '';
+            
+            // Show streaming indicator
+            streamingIndicator.classList.remove('hidden');
+            
+            try {
+                // Start streaming request
+                const response = await fetch(`${API_BASE_URL}/query`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+                
+                // Process streaming response
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullAnswer = '';
+                
+                // Update pipeline steps progressively
+                setTimeout(() => updatePipelineStep('upload', true), 300);
+                setTimeout(() => updatePipelineStep('process', true), 600);
+                setTimeout(() => updatePipelineStep('embed', true), 900);
+                setTimeout(() => updatePipelineStep('retrieve', true), 1200);
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = JSON.parse(line.slice(6));
+                            
+                            if (data.type === 'answer_chunk') {
+                                fullAnswer += data.content;
+                                answerContent.textContent = fullAnswer;
+                                answerContent.scrollTop = answerContent.scrollHeight;
+                            }
+                            else if (data.type === 'sources') {
+                                streamingIndicator.classList.add('hidden');
+                                displaySources(data.sources);
+                            }
+                            else if (data.type === 'error') {
+                                throw new Error(data.message);
+                            }
+                        }
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Query error:', error);
+                answerContent.innerHTML = `<p style="color: var(--error);">Error: ${error.message}</p>`;
+                streamingIndicator.classList.add('hidden');
+            } finally {
+                // Re-enable button
+                queryButton.disabled = false;
+                queryButton.innerHTML = '<i class="fas fa-search"></i> Execute Query';
+            }
+        }
+
+        function displaySources(sources) {
+            const sourcesList = document.getElementById('sourcesList');
+            sourcesList.innerHTML = '';
+            
+            if (!sources || sources.length === 0) {
+                sourcesList.innerHTML = '<p style="color: var(--text-gray); font-size: 0.875rem;">No sources retrieved</p>';
+                return;
+            }
+            
+            sources.forEach((source, index) => {
+                const sourceItem = document.createElement('div');
+                sourceItem.className = 'source-item';
+                sourceItem.innerHTML = `
+                    <span class="source-index">${index + 1}</span>
+                    <div style="flex: 1;">
+                        <div style="font-weight: 600; font-size: 0.875rem; margin-bottom: 4px;">${source.filename || 'Document'}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-gray);">${source.content ? source.content.substring(0, 150) + '...' : 'No content'}</div>
+                        ${source.page ? `<div style="font-size: 0.7rem; color: var(--primary-pink); margin-top: 4px;">Page ${source.page}</div>` : ''}
+                    </div>
+                `;
+                sourcesList.appendChild(sourceItem);
+            });
+            
+            // Scroll to results
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            setupDragAndDrop();
+            
+            // Check API status when dashboard loads
+            const dashboardScreen = document.getElementById('dashboardScreen');
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.target.classList.contains('active')) {
+                        checkAPIStatus();
+                    }
+                });
+            });
+            
+            observer.observe(dashboardScreen, { attributes: true, attributeFilter: ['class'] });
+            
+            // Add animation to features
+            const features = document.querySelectorAll('.feature-item');
+            features.forEach((feature, index) => {
+                feature.style.animationDelay = `${index * 0.1}s`;
+            });
+        });
+    </script>
+</body>
+</html>
